@@ -1,48 +1,54 @@
-from SPARQLWrapper import SPARQLWrapper, JSON
+from MySparql import data
 import pandas as pd
 
-# Specify the SPARQL endpoint URL
-sparql_endpoint = "http://statistics.gov.scot/sparql"
+data = pd.DataFrame(data)
 
-# Initialize SPARQLWrapper with the endpoint
-sparql = SPARQLWrapper(sparql_endpoint)
+#filter data to select Scotland only 
+#as the file might come with a further background per regions of Scotland
+scotland_data = data[data['Reference Area'] == 'Scotland']
 
-# Set the SPARQL query
-sparql.setQuery("""
-PREFIX dimension: <http://statistics.gov.scot/def/dimension/>
-PREFIX sdmxDimension: <http://purl.org/linked-data/sdmx/2009/dimension#>
-PREFIX measure: <http://statistics.gov.scot/def/measure-properties/>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+#ensure data are ordered by Year in Ascending order
+scotland_data = scotland_data.sort_values(by=["Reference Period"], ascending=[True])
 
-SELECT ?applicationTypeLabel ?refAreaLabel ?refPeriod ?count
-WHERE {
-  ?record dimension:applicationType ?applicationType .
-  ?record sdmxDimension:refArea ?refArea .
-  ?record sdmxDimension:refPeriod ?refPeriodURI .
-  ?record measure:count ?count .
-  
-  OPTIONAL { ?applicationType rdfs:label ?applicationTypeLabel . }
-  OPTIONAL { ?refArea rdfs:label ?refAreaLabel . }
-  OPTIONAL { ?refPeriodURI rdfs:label ?refPeriod . }
-}
-LIMIT 100
-""")
+#select only the rows where Sex = All and Measure Type is not 95% upper or lower confidence limit 
+filtered_data = scotland_data[
+    (data['Sex'] == 'All') &
+    ~data['Measure Type'].str.contains('confidence limit', case=False, na=False)
+]
 
-# Set the return format to JSON
-sparql.setReturnFormat(JSON)
+##ANALYSE DATA ABOUT SMOKING AND E-CIGARETS
+#select only data where Indicator is relevant to smoking and vaping
+smoke_data = filtered_data[
+                filtered_data['Indicator'].str.contains('smok', case=False, na=False)
+                | filtered_data['Indicator'].str.contains('E-cig', case=False, na=False)
+            ]
 
-# Execute the query and convert the result to a Python dictionary
-results = sparql.query().convert()
+#group by 'Reference Period', 'Indicator', 'Sex', 'Measure Type'
+grouped_data = smoke_data.groupby(['Reference Period', 'Indicator', 'Sex', 'Measure Type']).agg({'Value': 'first'}).reset_index()
 
-# Convert the SPARQL results to a Pandas DataFrame
-data = {
-    'Application Type': [result['applicationTypeLabel']['value'] if 'applicationTypeLabel' in result else None for result in results["results"]["bindings"]],
-    'Reference Area': [result['refAreaLabel']['value'] if 'refAreaLabel' in result else None for result in results["results"]["bindings"]],
-    'Reference Period': [result['refPeriod']['value'] if 'refPeriod' in result else None for result in results["results"]["bindings"]],
-    'Count': [float(result['count']['value']) if 'count' in result else None for result in results["results"]["bindings"]]  # Assuming count is a numeric value
-}
+#select only 'Reference Period', 'Indicator',"Value"
+grouped_data = grouped_data[['Reference Period', 'Indicator',"Value"]]
 
-df = pd.DataFrame(data)
+#make a pivot table for a better overview
+pivot_table = grouped_data.pivot_table(
+    index='Reference Period', 
+    columns='Indicator', 
+    values='Value',
+    aggfunc='first'
+)
 
-# Display the first few rows of the DataFrame
-print(df.head())
+#Reset the index to display the Reference Period column
+pivot_table.reset_index(inplace=True)
+
+#Rename columns in a friendly and shorter way
+pivot_table = pivot_table.rename(columns={
+    'Reference Period' : 'Year',
+    'Smoking status: Current smoker': 'Smokers',
+    'Smoking status: Never smoked/Used to smoke occasionally': 'Never or Occasional Smoker',
+    'Smoking status: Used to smoke regularly': 'Former Smoker',
+    'E-cigarette use: Currently using': 'Vapers',
+    'E-cigarette use: Ever previously used': 'Vaped at least once',
+    'E-cigarette use: Never used': 'Never Vaped',
+})
+
+pivot_table.to_csv('file_grouped.csv', index=False)
