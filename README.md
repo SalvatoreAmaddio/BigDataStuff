@@ -1,5 +1,8 @@
 # PIPELINE ASSESSMENT
 ![Alt Text](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpxuOADXRFZzbIb9bJqpFIjO0PgWFY2erEC7ewD8pPdg&s)
+
+![Alt Text](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/1869px-Python-logo-notext.svg.png)
+
 # INTRODUCTION
 This assessment simulates the use of a Pipeline. It uses Jupiter Notebook with Python. The project was developed by using Anaconda.
 ## The Data
