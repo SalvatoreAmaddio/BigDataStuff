@@ -1,0 +1,6 @@
+SPARQLWrapper,
+pandas,
+numpy,
+sqlalchemy 
+mysql-connector-python
+matplotlib
