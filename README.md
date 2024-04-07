@@ -7,4 +7,4 @@ The data used concerns Mental Health and its trends over the years. It is taken 
 - The second source is CSV file from **Kaggle**. The file can be downloaded at https://www.kaggle.com/datasets/thedevastator/uncover-global-trends-in-mental-health-disorder.
 
 ### Before excuting this file
-This project to run needs a few packages that can be found in the requirements.txt file. Also, this project will create a MySQL Database. Therefore, ensure you have changed the UserName and Password variables before running the file. These are at the top of the file.
+This project to run needs a few packages that can be found in the **requirements.txt** file. Also, this project will create a **MySQL** Database. Therefore, ensure you have changed the UserName and Password variables before running the file. These are at the top of the file with an visibile heading called **MYSQL USER AND PASSWORD**.
